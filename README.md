@@ -102,3 +102,4 @@ trade-offs, and the 10 questions interviewers ask next (with short answers).
 - Never quote a real denial rate, dollar saving, or accuracy from a job.
   Report only what this synthetic run produced, and say so.
 - No real patient data. The generator invents names/codes; IDs are `C-######`.
+"# claims-denial-lakehouse" 
