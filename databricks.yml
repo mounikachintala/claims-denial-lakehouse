@@ -1,0 +1,43 @@
+# BEFORE DEPLOY: replace the two placeholders below with your workspace
+# values, then run `databricks bundle validate`:
+#   1. /Volumes/<catalog>/<schema>/landing/claims.csv — Volume path of the
+#      uploaded claims.csv (bronze_silver task parameters).
+#   2. YOUR_SQL_WAREHOUSE_ID — your SQL warehouse ID (gold_models task).
+# The bundle will fail loudly until both are replaced; that is intentional.
+bundle:
+  name: claims-denial-lakehouse
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: ${{ env.DATABRICKS_HOST }}
+
+resources:
+  jobs:
+    claims-denial-pipeline:
+      name: claims-denial-pipeline
+      tasks:
+        - task_key: bronze_silver
+          spark_python_task:
+            python_file: src/bronze_silver.py
+            # bronze_silver.py requires --raw-path; without this the
+            # task imports the file and runs nothing.
+            parameters:
+              - --raw-path
+              - /Volumes/<catalog>/<schema>/landing/claims.csv
+        - task_key: gold_models
+          depends_on:
+            - task_key: bronze_silver
+          sql_task:
+            warehouse_id: YOUR_SQL_WAREHOUSE_ID
+            file:
+              path: sql/gold_models.sql
+        - task_key: train_model
+          depends_on:
+            - task_key: gold_models
+          spark_python_task:
+            python_file: src/features_train.py
+            # No parameters: defaults to reading gold.claim_features,
+            # built by the gold_models task above.
